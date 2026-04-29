@@ -1,0 +1,86 @@
+{
+  "tables": [
+    {
+      "name": "accounts",
+      "columns": [
+        { "name": "id", "type": "SERIAL", "constraints": "PRIMARY KEY" },
+        { "name": "name", "type": "VARCHAR(100)", "constraints": "NOT NULL" },
+        { "name": "type", "type": "VARCHAR(20)", "constraints": "NOT NULL CHECK (type IN ('checking', 'savings', 'cash', 'credit'))" },
+        { "name": "initial_balance", "type": "NUMERIC(12, 2)", "constraints": "NOT NULL DEFAULT 0" },
+        { "name": "created_at", "type": "TIMESTAMP", "constraints": "DEFAULT CURRENT_TIMESTAMP" }
+      ]
+    },
+    {
+      "name": "categories",
+      "columns": [
+        { "name": "id", "type": "SERIAL", "constraints": "PRIMARY KEY" },
+        { "name": "name", "type": "VARCHAR(100)", "constraints": "NOT NULL" },
+        { "name": "kind", "type": "VARCHAR(10)", "constraints": "NOT NULL CHECK (kind IN ('expense', 'income'))" },
+        { "name": "color", "type": "VARCHAR(7)", "constraints": "DEFAULT '#888888'" },
+        { "name": "created_at", "type": "TIMESTAMP", "constraints": "DEFAULT CURRENT_TIMESTAMP" }
+      ]
+    },
+    {
+      "name": "transactions",
+      "columns": [
+        { "name": "id", "type": "SERIAL", "constraints": "PRIMARY KEY" },
+        { "name": "amount", "type": "NUMERIC(12, 2)", "constraints": "NOT NULL" },
+        { "name": "description", "type": "VARCHAR(255)", "constraints": "" },
+        { "name": "transaction_date", "type": "DATE", "constraints": "NOT NULL DEFAULT CURRENT_DATE" },
+        {
+          "name": "account_id",
+          "type": "INTEGER",
+          "constraints": "NOT NULL",
+          "references": {
+            "module": "budget",
+            "table": "accounts",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        { "name": "created_at", "type": "TIMESTAMP", "constraints": "DEFAULT CURRENT_TIMESTAMP" }
+      ]
+    },
+    {
+      "name": "transaction_splits",
+      "columns": [
+        { "name": "id", "type": "SERIAL", "constraints": "PRIMARY KEY" },
+        {
+          "name": "transaction_id",
+          "type": "INTEGER",
+          "constraints": "NOT NULL",
+          "references": {
+            "module": "budget",
+            "table": "transactions",
+            "column": "id",
+            "on_delete": "CASCADE"
+          }
+        },
+        { "name": "amount", "type": "NUMERIC(12, 2)", "constraints": "NOT NULL" },
+        {
+          "name": "category_id",
+          "type": "INTEGER",
+          "constraints": "NOT NULL",
+          "references": {
+            "module": "budget",
+            "table": "categories",
+            "column": "id",
+            "on_delete": "RESTRICT"
+          }
+        },
+        {
+          "name": "person_id",
+          "type": "INTEGER",
+          "constraints": "",
+          "references": {
+            "module": "auth",
+            "table": "persons",
+            "column": "id",
+            "on_delete": "SET NULL"
+          }
+        },
+        { "name": "description", "type": "VARCHAR(255)", "constraints": "" }
+      ]
+    }
+  ]
+}
