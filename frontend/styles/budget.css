@@ -1,0 +1,396 @@
+.budget-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.budget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.budget-header h2 {
+    margin: 0;
+}
+
+.budget-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.budget-tab {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+}
+
+.budget-tab:hover {
+    color: #2c3e50;
+}
+
+.budget-tab.active {
+    color: #2c3e50;
+    font-weight: 600;
+    border-bottom-color: #3498db;
+}
+
+.budget-btn-primary {
+    padding: 0.5rem 1rem;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.budget-btn-primary:hover {
+    background: #2980b9;
+}
+
+.budget-btn-danger {
+    padding: 0.4rem 0.8rem;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.budget-btn-danger:hover {
+    background: #c0392b;
+}
+
+.budget-btn-secondary {
+    padding: 0.4rem 0.8rem;
+    background: #95a5a6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.budget-btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.budget-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.budget-item-info {
+    flex: 1;
+}
+
+.budget-item-info strong {
+    font-size: 1.05rem;
+}
+
+.budget-item-meta {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.budget-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.account-balance {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-right: 1rem;
+}
+
+.account-balance.negative {
+    color: #e74c3c;
+}
+
+.account-type-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    background: #ecf0f1;
+    color: #34495e;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-left: 0.5rem;
+}
+
+.category-color-dot {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+.category-kind-badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-left: 0.5rem;
+}
+
+.category-kind-badge.expense {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.category-kind-badge.income {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.transactions-filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.transactions-filters label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.transactions-filters select,
+.transactions-filters input {
+    margin-top: 0.25rem;
+    padding: 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.transactions-table thead {
+    background: #2c3e50;
+    color: white;
+}
+
+.transactions-table th,
+.transactions-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.transactions-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.transaction-amount.expense {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.transaction-amount.income {
+    color: #27ae60;
+    font-weight: 600;
+}
+
+.transaction-splits-row {
+    background: #fafbfc;
+}
+
+.transaction-splits-row td {
+    padding-left: 2rem;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.split-line {
+    padding: 0.25rem 0;
+    border-bottom: 1px dotted #ddd;
+}
+
+.split-line:last-child {
+    border-bottom: none;
+}
+
+.expand-toggle {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #3498db;
+    font-size: 0.9rem;
+    padding: 0;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    min-width: 450px;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+}
+
+.modal-content label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #34495e;
+}
+
+.modal-content input,
+.modal-content select,
+.modal-content textarea {
+    width: 100%;
+    padding: 0.6rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+.modal-content input[type="color"] {
+    height: 40px;
+    cursor: pointer;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.splits-section {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.splits-section h4 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.split-row {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr 1fr auto;
+    gap: 0.5rem;
+    align-items: end;
+    margin-bottom: 0.5rem;
+}
+
+.split-row input,
+.split-row select {
+    margin-bottom: 0;
+}
+
+.split-row label {
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+    color: #555;
+}
+
+.split-remove {
+    padding: 0.5rem 0.75rem;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.add-split-btn {
+    padding: 0.4rem 0.8rem;
+    background: #95a5a6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.splits-validation {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.splits-validation.valid {
+    background: #d4edda;
+    color: #155724;
+}
+
+.splits-validation.invalid {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.budget-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #95a5a6;
+}
+
+.hidden {
+    display: none !important;
+}
