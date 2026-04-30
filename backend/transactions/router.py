@@ -81,3 +81,36 @@ def delete_transaction(id):
         return jsonify({"success": True, "message": "Transaction deleted"}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@transactions_router.route("/budget/transfers", methods=["POST"])
+@login_required
+def create_transfer():
+    data = request.get_json()
+
+    from_account_id = data.get("from_account_id")
+    to_account_id = data.get("to_account_id")
+    amount = data.get("amount")
+    transaction_date = data.get("transaction_date")
+    description = data.get("description", "")
+
+    if not from_account_id or not to_account_id or amount is None or not transaction_date:
+        return jsonify({
+            "success": False,
+            "error": "Missing required fields (from_account_id, to_account_id, amount, transaction_date)"
+        }), 400
+
+    try:
+        out_id, in_id = transaction_repository.create_transfer(
+            from_account_id, to_account_id, amount, transaction_date, description
+        )
+        return jsonify({
+            "success": True,
+            "message": "Transfer created",
+            "out_transaction_id": out_id,
+            "in_transaction_id": in_id
+        }), 201
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

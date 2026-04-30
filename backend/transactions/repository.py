@@ -1,4 +1,5 @@
 from core.backend import database
+from addons.budget.backend.categories.repository import category_repository
 
 TRANSACTIONS_TABLE = "budget_transactions"
 SPLITS_TABLE = "budget_transaction_splits"
@@ -122,6 +123,80 @@ class TransactionRepository:
         automatically by the ON DELETE CASCADE constraint.
         """
         database.delete_item(TRANSACTIONS_TABLE, {"id": transaction_id})
+
+    def create_transfer(self, from_account_id, to_account_id, amount, transaction_date, description=""):
+        """
+        Creates an inter-account transfer atomically.
+        
+        A transfer is materialized as two transactions:
+        - An 'expense' on the source account, with the system 'Transfer Out' category
+        - An 'income' on the destination account, with the system 'Transfer In' category
+        
+        Both transactions (and their splits) are created in a single database
+        transaction. If any insert fails, all changes are rolled back, ensuring
+        the two accounts are never out of sync.
+        
+        Returns a tuple of the two created transaction ids: (out_id, in_id).
+        """
+        if from_account_id == to_account_id:
+            raise ValueError("Source and destination accounts must be different")
+        if amount <= 0:
+            raise ValueError("Transfer amount must be positive")
+
+        out_category_id, in_category_id = category_repository.ensure_transfer_categories()
+
+        def operations(cursor):
+            out_result = database.insert_item(
+                TRANSACTIONS_TABLE,
+                {
+                    "amount": amount,
+                    "description": description,
+                    "transaction_date": transaction_date,
+                    "account_id": from_account_id
+                },
+                cursor=cursor,
+                returning="id"
+            )
+            out_transaction_id = out_result[0]["id"]
+
+            database.insert_item(
+                SPLITS_TABLE,
+                {
+                    "transaction_id": out_transaction_id,
+                    "amount": amount,
+                    "category_id": out_category_id,
+                    "description": description
+                },
+                cursor=cursor
+            )
+
+            in_result = database.insert_item(
+                TRANSACTIONS_TABLE,
+                {
+                    "amount": amount,
+                    "description": description,
+                    "transaction_date": transaction_date,
+                    "account_id": to_account_id
+                },
+                cursor=cursor,
+                returning="id"
+            )
+            in_transaction_id = in_result[0]["id"]
+
+            database.insert_item(
+                SPLITS_TABLE,
+                {
+                    "transaction_id": in_transaction_id,
+                    "amount": amount,
+                    "category_id": in_category_id,
+                    "description": description
+                },
+                cursor=cursor
+            )
+
+            return out_transaction_id, in_transaction_id
+
+        return database.execute_transaction(operations)
 
     def _validate_splits(self, transaction_amount, splits_data):
         """

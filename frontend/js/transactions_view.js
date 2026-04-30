@@ -31,23 +31,47 @@ export async function render(container) {
             <div class="modal-content">
                 <h3 id="transaction-modal-title">Add Transaction</h3>
 
-                <label>Account</label>
-                <select id="transaction-account"></select>
+                <div class="transaction-mode-toggle">
+                    <button type="button" class="mode-btn active" data-mode="transaction">Transaction</button>
+                    <button type="button" class="mode-btn" data-mode="transfer">Transfer</button>
+                </div>
 
-                <label>Date</label>
-                <input type="date" id="transaction-date" />
+                <div id="transaction-fields">
+                    <label>Account</label>
+                    <select id="transaction-account"></select>
 
-                <label>Total Amount</label>
-                <input type="number" id="transaction-amount" step="0.01" />
+                    <label>Date</label>
+                    <input type="date" id="transaction-date" />
 
-                <label>Description</label>
-                <input type="text" id="transaction-description" />
+                    <label>Total Amount</label>
+                    <input type="number" id="transaction-amount" step="0.01" />
 
-                <div class="splits-section">
-                    <h4>Splits</h4>
-                    <div id="splits-list"></div>
-                    <button type="button" id="add-split-btn" class="add-split-btn">+ Add Split</button>
-                    <div id="splits-validation" class="splits-validation"></div>
+                    <label>Description</label>
+                    <input type="text" id="transaction-description" />
+
+                    <div class="splits-section">
+                        <h4>Splits</h4>
+                        <div id="splits-list"></div>
+                        <button type="button" id="add-split-btn" class="add-split-btn">+ Add Split</button>
+                        <div id="splits-validation" class="splits-validation"></div>
+                    </div>
+                </div>
+
+                <div id="transfer-fields" class="hidden">
+                    <label>From Account</label>
+                    <select id="transfer-from"></select>
+
+                    <label>To Account</label>
+                    <select id="transfer-to"></select>
+
+                    <label>Date</label>
+                    <input type="date" id="transfer-date" />
+
+                    <label>Amount</label>
+                    <input type="number" id="transfer-amount" step="0.01" min="0.01" />
+
+                    <label>Description (optional)</label>
+                    <input type="text" id="transfer-description" />
                 </div>
 
                 <div class="modal-actions">
@@ -64,8 +88,12 @@ export async function render(container) {
 
     document.getElementById("add-transaction-btn").addEventListener("click", () => openModal());
     document.getElementById("transaction-cancel").addEventListener("click", closeModal);
-    document.getElementById("transaction-confirm").addEventListener("click", saveTransaction);
+    document.getElementById("transaction-confirm").addEventListener("click", saveModal);
     document.getElementById("add-split-btn").addEventListener("click", () => addSplitRow());
+
+    document.querySelectorAll(".mode-btn").forEach(btn => {
+        btn.addEventListener("click", () => switchMode(btn.dataset.mode));
+    });
 
     document.getElementById("transaction-amount").addEventListener("input", validateSplits);
 
@@ -90,6 +118,11 @@ async function loadRelatedData() {
 }
 
 
+function isTransferCategory(cat) {
+    return cat.name === "Transfer Out" || cat.name === "Transfer In";
+}
+
+
 function populateFilters() {
     const accountFilter = document.getElementById("filter-account");
     accounts.forEach(a => {
@@ -100,7 +133,7 @@ function populateFilters() {
     });
 
     const categoryFilter = document.getElementById("filter-category");
-    categories.forEach(c => {
+    categories.filter(c => !isTransferCategory(c)).forEach(c => {
         const opt = document.createElement("option");
         opt.value = c.id;
         opt.textContent = c.name;
@@ -236,12 +269,33 @@ function formatDate(dateValue) {
 
 
 let editingTransactionId = null;
+let currentMode = "transaction";
+
+function switchMode(mode) {
+    currentMode = mode;
+    document.querySelectorAll(".mode-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.mode === mode);
+    });
+    document.getElementById("transaction-fields").classList.toggle("hidden", mode !== "transaction");
+    document.getElementById("transfer-fields").classList.toggle("hidden", mode !== "transfer");
+}
+
 
 function openModal(transaction = null) {
     editingTransactionId = transaction ? transaction.id : null;
     document.getElementById("transaction-modal-title").textContent = transaction ? "Edit Transaction" : "Add Transaction";
 
-    // Populate accounts dropdown
+    // When editing, force transaction mode and hide the toggle (cannot transform a transaction into a transfer)
+    const toggle = document.querySelector(".transaction-mode-toggle");
+    if (transaction) {
+        switchMode("transaction");
+        toggle.classList.add("hidden");
+    } else {
+        switchMode("transaction");
+        toggle.classList.remove("hidden");
+    }
+
+    // Populate accounts dropdowns
     const accountSelect = document.getElementById("transaction-account");
     accountSelect.innerHTML = "";
     accounts.forEach(a => {
@@ -251,11 +305,34 @@ function openModal(transaction = null) {
         accountSelect.appendChild(opt);
     });
 
-    // Set fields
-    document.getElementById("transaction-date").value = transaction ? formatDate(transaction.transaction_date) : new Date().toISOString().split('T')[0];
+    const fromSelect = document.getElementById("transfer-from");
+    const toSelect = document.getElementById("transfer-to");
+    fromSelect.innerHTML = "";
+    toSelect.innerHTML = "";
+    accounts.forEach(a => {
+        const optFrom = document.createElement("option");
+        optFrom.value = a.id;
+        optFrom.textContent = a.name;
+        fromSelect.appendChild(optFrom);
+
+        const optTo = document.createElement("option");
+        optTo.value = a.id;
+        optTo.textContent = a.name;
+        toSelect.appendChild(optTo);
+    });
+    if (accounts.length > 1) toSelect.value = accounts[1].id;
+
+    // Set transaction fields
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("transaction-date").value = transaction ? formatDate(transaction.transaction_date) : today;
     document.getElementById("transaction-amount").value = transaction ? transaction.amount : "";
     document.getElementById("transaction-description").value = transaction ? (transaction.description || "") : "";
     if (transaction) accountSelect.value = transaction.account_id;
+
+    // Reset transfer fields
+    document.getElementById("transfer-date").value = today;
+    document.getElementById("transfer-amount").value = "";
+    document.getElementById("transfer-description").value = "";
 
     // Populate splits
     const splitsList = document.getElementById("splits-list");
@@ -278,12 +355,21 @@ function closeModal() {
 }
 
 
+async function saveModal() {
+    if (currentMode === "transfer") {
+        await saveTransfer();
+    } else {
+        await saveTransaction();
+    }
+}
+
+
 function addSplitRow(split = null) {
     const splitsList = document.getElementById("splits-list");
     const row = document.createElement("div");
     row.className = "split-row";
 
-    const categoryOptions = categories.map(c =>
+    const categoryOptions = categories.filter(c => !isTransferCategory(c)).map(c =>
         `<option value="${c.id}" ${split && split.category_id === c.id ? 'selected' : ''}>${c.name}</option>`
     ).join('');
 
@@ -419,6 +505,52 @@ async function deleteTransaction(id) {
         const data = await response.json();
 
         if (data.success) {
+            await loadTransactions();
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    } catch (e) {
+        alert(`Error: ${e.message}`);
+    }
+}
+
+
+async function saveTransfer() {
+    const fromAccountId = parseInt(document.getElementById("transfer-from").value);
+    const toAccountId = parseInt(document.getElementById("transfer-to").value);
+    const amount = parseFloat(document.getElementById("transfer-amount").value);
+    const date = document.getElementById("transfer-date").value;
+    const description = document.getElementById("transfer-description").value.trim();
+
+    if (!fromAccountId || !toAccountId || !amount || !date) {
+        return alert("From, to, amount and date are required");
+    }
+    if (fromAccountId === toAccountId) {
+        return alert("Source and destination accounts must be different");
+    }
+    if (amount <= 0) {
+        return alert("Amount must be positive");
+    }
+
+    const auth = serviceRegistry.get("auth");
+    const headers = { "Content-Type": "application/json", ...auth.authHeaders() };
+
+    try {
+        const response = await fetch(`${API_URL}/budget/transfers`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                from_account_id: fromAccountId,
+                to_account_id: toAccountId,
+                amount,
+                transaction_date: date,
+                description
+            })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            closeModal();
             await loadTransactions();
         } else {
             alert(`Error: ${data.error}`);

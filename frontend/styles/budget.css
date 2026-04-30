@@ -391,6 +391,35 @@
     color: #95a5a6;
 }
 
+.transaction-mode-toggle {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.25rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.transaction-mode-toggle .mode-btn {
+    flex: 1;
+    padding: 0.6rem;
+    background: white;
+    color: #555;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+}
+
+.transaction-mode-toggle .mode-btn:hover {
+    background: #f0f0f0;
+}
+
+.transaction-mode-toggle .mode-btn.active {
+    background: #3498db;
+    color: white;
+}
+
 .hidden {
     display: none !important;
 }
