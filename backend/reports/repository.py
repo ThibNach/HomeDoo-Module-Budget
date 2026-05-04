@@ -105,10 +105,10 @@ class ReportsRepository:
 
         for split in splits_in_month:
             category_report = category_reports_by_id.get(split["category_id"])
-            
+
             amount = float(split["amount"])
             category_report.total += amount
-            
+
             person_share = next(
                 (ps for ps in category_report.by_person if ps.person_id == split.get("person_id")),
                 None
@@ -127,6 +127,69 @@ class ReportsRepository:
             )
             for report in category_reports_by_id.values()
             if report.total != 0
+        ]
+
+    def get_totals_by_person(self, year: int, month: int):
+        indexed_data = self._load_indexed_data()
+
+        #:TODO: Exactly the same than the beggining of get_totals_by_category, find a way to dry
+        #######################################################################################
+        transactions_in_month = [
+            t for t in indexed_data["transactions"]
+            if t["transaction_date"].year == year and t["transaction_date"].month == month
+        ]
+
+        splits_in_month = [
+            split
+            for transaction in transactions_in_month
+            for split in indexed_data["splits_by_transaction"].get(transaction["id"], [])
+        ]
+
+        #######################################################################################
+
+        person_report_by_id = {}
+        for person in indexed_data["persons_by_id"].values():
+            category_shares = [
+                CategoryShare(
+                    category_id=category["id"],
+                    category_name=category["name"],
+                    color=category["color"],
+                    total=0.0
+                ) for category in indexed_data["categories_by_id"].values()
+            ]
+
+            person_report_by_id[person["id"]] = PersonReport(
+                person_id=person["id"],
+                person_name=person["name"],
+                total=0.0,
+                by_category=category_shares
+            )
+            person_report_by_id[None] = PersonReport(None, "Unassigned", 0.0, by_category=[CategoryShare(
+                category_id=c["id"],
+                category_name=c["name"],
+                color=c["color"],
+                total=0.0,
+            ) for c in indexed_data["categories_by_id"].values()], )
+
+        for split in splits_in_month:
+            person_report = person_report_by_id[split.get("person_id")]
+
+            amount = float(split["amount"])
+            person_report.total += amount
+
+            category_share = next(
+                (cs for cs in person_report.by_category if split.get("category_id") == cs.category_id), None)
+
+            if category_share is not None:
+                category_share.total += amount
+
+        return [
+            PersonReport(
+                person_id=report.person_id,
+                person_name=report.person_name,
+                total=report.total,
+                by_category=[cs for cs in report.by_category if cs.total != 0]
+            ) for report in person_report_by_id.values() if report.total != 0
         ]
 
     # :TODO: Find a way to call _load_indexed_data only once for all reports without
