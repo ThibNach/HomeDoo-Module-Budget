@@ -2,6 +2,11 @@ const API_URL = "http://127.0.0.1:5000";
 import { serviceRegistry } from "http://127.0.0.1:3000/js/service_registry.js";
 
 
+function isSystemCategory(cat) {
+    return cat.name === "Transfer Out" || cat.name === "Transfer In";
+}
+
+
 export async function render(container) {
     container.innerHTML = `
         <div class="budget-header">
@@ -44,16 +49,17 @@ async function loadCategories() {
         headers: auth.authHeaders()
     });
     const categories = await response.json();
+    const visibleCategories = categories.filter(c => !isSystemCategory(c));
 
     const list = document.getElementById("categories-list");
     list.innerHTML = "";
 
-    if (categories.length === 0) {
+    if (visibleCategories.length === 0) {
         list.innerHTML = `<div class="budget-empty">No categories yet. Create your first one!</div>`;
         return;
     }
 
-    categories.forEach(cat => {
+    visibleCategories.forEach(cat => {
         const item = document.createElement("div");
         item.className = "budget-item";
         item.innerHTML = `
@@ -72,7 +78,7 @@ async function loadCategories() {
 
     document.querySelectorAll(".edit-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-            const cat = categories.find(c => c.id === parseInt(btn.dataset.id));
+            const cat = visibleCategories.find(c => c.id === parseInt(btn.dataset.id));
             openModal(cat);
         });
     });
