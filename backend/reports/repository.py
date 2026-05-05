@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from os.path import split
+from psycopg2 import sql
+from datetime import date
 
 from core.backend import database
 
@@ -47,52 +48,61 @@ class PersonReport:
 
 class ReportsRepository:
 
+    #:TODO: Refactor to use database.execute_raw_query to let the DB make the aggregate
     def get_all_accounts_balance(self):
         accounts = database.fetch_all("budget_accounts")
-        indexed_data = self._load_indexed_data()
 
-        account_reports = []
-        for account in accounts:
-            account_report = AccountReport(
-                account["id"],
-                account["name"],
-                account["type"],
-                float(account["initial_balance"])
+        transactions = database.fetch_all("budget_transactions")
+        splits = database.fetch_all("budget_transaction_splits")
+        categories = database.fetch_all("budget_categories")
+
+        transactions_by_id = {t["id"]: t for t in transactions}
+        categories_by_id = {c["id"]: c for c in categories}
+
+        account_reports_by_id = {
+            account["id"]: AccountReport(
+                account_id=account["id"],
+                account_name=account["name"],
+                account_type=account["type"],
+                account_balance=float(account["initial_balance"]),
             )
+            for account in accounts
+        }
 
-            for transaction in indexed_data["transactions_by_account"].get(account["id"], []):
-                for split in indexed_data["splits_by_transaction"].get(transaction["id"], []):
-                    cat = indexed_data["categories_by_id"].get(split["category_id"])
-                    if cat is None:
-                        continue
-                    amount = float(split["amount"])
-                    account_report.account_balance += amount if cat["kind"] == "income" else -amount
+        for split in splits:
+            transaction = transactions_by_id.get(split["transaction_id"])
+            if transaction is None:
+                continue
 
-            account_reports.append(account_report)
+            category = categories_by_id.get(split["category_id"])
+            if category is None:
+                continue
 
-        return account_reports
+            account_report = account_reports_by_id.get(transaction["account_id"])
+            if account_report is None:
+                continue
+
+            amount = float(split["amount"])
+            signed_amount = amount if category["kind"] == "income" else -amount
+            account_report.account_balance += signed_amount
+
+        return list(account_reports_by_id.values())
 
     def get_totals_by_category(self, year: int, month: int):
-        indexed_data = self._load_indexed_data()
+        splits_in_month = self._get_splits_in_month(year, month)
 
-        transactions_in_month = [
-            t for t in indexed_data["transactions"]
-            if t["transaction_date"].year == year and t["transaction_date"].month == month
-        ]
+        persons = database.fetch_all("auth_persons")
+        all_person_entries = [(p["id"], p["name"]) for p in persons]
+        all_person_entries.append((None, "Unassigned"))
 
-        splits_in_month = [
-            split
-            for transaction in transactions_in_month
-            for split in indexed_data["split_by_transaction"].get(transaction["id"], [])
-        ]
+        categories = database.fetch_all("budget_categories")
 
         category_reports_by_id = {}
-        for category in indexed_data["categories_by_id"].values():
+        for category in categories:
             person_shares = [
-                PersonShare(person_id, person["name"], 0.0)
-                for person_id, person in indexed_data["persons_by_id"].items()
+                PersonShare(person_id, person_name, 0.0)
+                for person_id, person_name in all_person_entries
             ]
-            person_shares.append(PersonShare(None, "Unassigned", 0.0))
 
             category_reports_by_id[category["id"]] = CategoryReport(
                 category_id=category["id"],
@@ -105,6 +115,8 @@ class ReportsRepository:
 
         for split in splits_in_month:
             category_report = category_reports_by_id.get(split["category_id"])
+            if category_report is None:
+                continue
 
             amount = float(split["amount"])
             category_report.total += amount
@@ -130,49 +142,34 @@ class ReportsRepository:
         ]
 
     def get_totals_by_person(self, year: int, month: int):
-        indexed_data = self._load_indexed_data()
-
-        #:TODO: Exactly the same than the beggining of get_totals_by_category, find a way to dry
-        #######################################################################################
-        transactions_in_month = [
-            t for t in indexed_data["transactions"]
-            if t["transaction_date"].year == year and t["transaction_date"].month == month
-        ]
-
-        splits_in_month = [
-            split
-            for transaction in transactions_in_month
-            for split in indexed_data["splits_by_transaction"].get(transaction["id"], [])
-        ]
-
-        #######################################################################################
+        persons = database.fetch_all("auth_persons")
+        categories = database.fetch_all("budget_categories")
+        splits_in_month = self._get_splits_in_month(year, month)
 
         person_report_by_id = {}
-        for person in indexed_data["persons_by_id"].values():
+        all_person_entries = [(p["id"], p["name"]) for p in persons]
+        all_person_entries.append((None, "Unassigned"))
+
+        for person_id, person_name in all_person_entries:
             category_shares = [
                 CategoryShare(
                     category_id=category["id"],
                     category_name=category["name"],
                     color=category["color"],
-                    total=0.0
-                ) for category in indexed_data["categories_by_id"].values()
+                    total=0.0,
+                ) for category in categories
             ]
-
-            person_report_by_id[person["id"]] = PersonReport(
-                person_id=person["id"],
-                person_name=person["name"],
+            person_report_by_id[person_id] = PersonReport(
+                person_id=person_id,
+                person_name=person_name,
                 total=0.0,
-                by_category=category_shares
+                by_category=category_shares,
             )
-            person_report_by_id[None] = PersonReport(None, "Unassigned", 0.0, by_category=[CategoryShare(
-                category_id=c["id"],
-                category_name=c["name"],
-                color=c["color"],
-                total=0.0,
-            ) for c in indexed_data["categories_by_id"].values()], )
 
         for split in splits_in_month:
-            person_report = person_report_by_id[split.get("person_id")]
+            person_report = person_report_by_id.get(split.get("person_id"))
+            if person_report is None:
+                continue
 
             amount = float(split["amount"])
             person_report.total += amount
@@ -192,29 +189,28 @@ class ReportsRepository:
             ) for report in person_report_by_id.values() if report.total != 0
         ]
 
-    # :TODO: Find a way to call _load_indexed_data only once for all reports without
-    #  coupling it with others repositories and without having only one big full report route
+    def _get_splits_in_month(self, year: int, month: int, cursor=None):
+        start = date(year, month, 1)
+        end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
 
-    def _load_indexed_data(self):
-        transactions = database.fetch_all("budget_transactions")
-        splits = database.fetch_all("budget_transaction_splits")
-        categories = database.fetch_all("budget_categories")
-        persons = database.fetch_all("auth_persons")
+        query = sql.SQL("""
+                        SELECT {splits}.*
+                        FROM {splits}
+                        JOIN {transactions}
+                        ON {splits}.{tx_id} = {transactions}.{id}
+                        WHERE {transactions}.{date_col} >= {start_ph}
+                          AND {transactions}.{date_col} < {end_ph}
+                        """).format(
+            splits=sql.Identifier("budget_transaction_splits"),
+            transactions=sql.Identifier("budget_transactions"),
+            tx_id=sql.Identifier("transaction_id"),
+            id=sql.Identifier("id"),
+            date_col=sql.Identifier("transaction_date"),
+            start_ph=sql.Placeholder(),
+            end_ph=sql.Placeholder(),
+        )
 
-        return {
-            "transactions": transactions,
-            "splits": splits,
-            "categories_by_id": {c["id"]: c for c in categories},
-            "persons_by_id": {p["id"]: p for p in persons},
-            "transactions_by_account": self._index_by(transactions, "account_id"),
-            "splits_by_transaction": self._index_by(splits, "transaction_id"),
-        }
-
-    def _index_by(self, items, key):
-        indexed = {}
-        for item in items:
-            indexed.setdefault(item[key], []).append(item)
-        return indexed
+        return database.execute_raw_query(query, [start, end], cursor=cursor)
 
 
 reports_repository = ReportsRepository()
