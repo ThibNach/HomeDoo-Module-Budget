@@ -190,27 +190,39 @@ class ReportsRepository:
         ]
 
     def _get_splits_in_month(self, year: int, month: int, cursor=None):
+        # :TODO: Filter system categories properly. Currently filtered by name
+        # because we don't have a kind="transfer" or is_system column yet.
+
         start = date(year, month, 1)
         end = date(year + 1, 1, 1) if month == 12 else date(year, month + 1, 1)
 
         query = sql.SQL("""
                         SELECT {splits}.*
                         FROM {splits}
-                        JOIN {transactions}
-                        ON {splits}.{tx_id} = {transactions}.{id}
+                            JOIN {transactions} ON {splits}.{tx_id} = {transactions}.{id}
+                            JOIN {categories} ON {splits}.{cat_id} = {categories}.{id}
                         WHERE {transactions}.{date_col} >= {start_ph}
                           AND {transactions}.{date_col} < {end_ph}
+                          AND {categories}.{name_col} NOT IN ({transfer_in}, {transfer_out})
                         """).format(
             splits=sql.Identifier("budget_transaction_splits"),
             transactions=sql.Identifier("budget_transactions"),
+            categories=sql.Identifier("budget_categories"),
             tx_id=sql.Identifier("transaction_id"),
+            cat_id=sql.Identifier("category_id"),
             id=sql.Identifier("id"),
             date_col=sql.Identifier("transaction_date"),
+            name_col=sql.Identifier("name"),
             start_ph=sql.Placeholder(),
             end_ph=sql.Placeholder(),
+            transfer_in=sql.Placeholder(),
+            transfer_out=sql.Placeholder(),
         )
 
-        return database.execute_raw_query(query, [start, end], cursor=cursor)
+        return database.execute_raw_query(
+            query,
+            [start, end, "Transfer In", "Transfer Out"]
+        )
 
 
 reports_repository = ReportsRepository()

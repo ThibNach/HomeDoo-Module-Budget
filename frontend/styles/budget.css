@@ -423,3 +423,239 @@
 .hidden {
     display: none !important;
 }
+
+/* ============================================
+   BUDGET TOPBAR & BURGER MENU
+   ============================================ */
+
+.budget-topbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.budget-burger {
+    position: relative;
+}
+
+.budget-burger-btn {
+    background: transparent;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.4rem 0.75rem;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #2c3e50;
+    transition: background 0.2s;
+}
+
+.budget-burger-btn:hover {
+    background: #f0f0f0;
+}
+
+.budget-burger-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.25rem;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    min-width: 180px;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.budget-burger-dropdown a {
+    display: block;
+    padding: 0.6rem 1rem;
+    color: #2c3e50;
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+}
+
+.budget-burger-dropdown a:hover {
+    background: #f8f9fa;
+}
+
+/* ============================================
+   REPORTS LAYOUT
+   ============================================ */
+
+.reports-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.reports-section {
+    background: white;
+    border-radius: 6px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.reports-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.reports-section-header h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.reports-subsection {
+    margin-bottom: 1rem;
+}
+
+.reports-subsection:last-child {
+    margin-bottom: 0;
+}
+
+.reports-subsection h4 {
+    margin: 0 0 0.5rem 0;
+    color: #555;
+    font-size: 0.95rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ============================================
+   MONTH SELECTOR
+   ============================================ */
+
+.reports-month-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.reports-month-selector label {
+    font-weight: 500;
+    color: #34495e;
+}
+
+.reports-month-selector input[type="month"] {
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+/* ============================================
+   ACCOUNT BALANCES
+   ============================================ */
+
+.account-balances-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+}
+
+.account-balance-card {
+    padding: 1rem;
+    background: #f8f9fa;
+    border-left: 4px solid #3498db;
+    border-radius: 4px;
+}
+
+.account-balance-card.negative {
+    border-left-color: #e74c3c;
+}
+
+.account-balance-name {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #2c3e50;
+}
+
+.account-balance-type {
+    font-size: 0.8rem;
+    color: #95a5a6;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.15rem;
+}
+
+.account-balance-amount {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-top: 0.5rem;
+}
+
+.account-balance-card.negative .account-balance-amount {
+    color: #e74c3c;
+}
+
+/* ============================================
+   REPORT ROWS (category & person totals)
+   ============================================ */
+
+.report-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.5rem;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.report-row:last-of-type {
+    border-bottom: none;
+}
+
+.report-row-name {
+    flex: 1;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.report-row-amount {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: #2c3e50;
+}
+
+.report-row-amount.income {
+    color: #27ae60;
+}
+
+.report-row-amount.expense {
+    color: #e74c3c;
+}
+
+.report-row-details {
+    padding: 0.5rem 0.5rem 0.75rem 2.5rem;
+    background: #fafbfc;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.report-row-detail {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    font-size: 0.92rem;
+    color: #555;
+}
+
+.report-row-detail-name {
+    flex: 1;
+}
+
+.report-row-detail-amount {
+    font-weight: 500;
+}

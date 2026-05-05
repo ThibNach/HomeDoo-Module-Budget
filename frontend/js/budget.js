@@ -1,9 +1,18 @@
 const API_URL = "http://127.0.0.1:5000";
 
-let currentTab = "transactions";
+const VIEWS = {
+    reports: {label: "Reports", isDefault: true},
+    transactions: {label: "Transactions"},
+    accounts: {label: "Accounts"},
+    categories: {label: "Categories"},
+};
+
+let currentView = "reports";
 
 
 export async function render() {
+    currentView = "reports";
+    
     if (!document.getElementById("budget-css")) {
         const link = document.createElement("link");
         link.id = "budget-css";
@@ -15,32 +24,51 @@ export async function render() {
     const app = document.getElementById("app");
     app.innerHTML = `
         <div class="budget-container">
-            <div class="budget-tabs">
-                <button class="budget-tab" data-tab="transactions">Transactions</button>
-                <button class="budget-tab" data-tab="accounts">Accounts</button>
-                <button class="budget-tab" data-tab="categories">Categories</button>
+            <div class="budget-topbar">
+                <div class="budget-burger">
+                    <button id="budget-burger-btn" class="budget-burger-btn">☰</button>
+                    <div id="budget-burger-dropdown" class="budget-burger-dropdown hidden">
+                        ${Object.entries(VIEWS).map(([key, view]) =>
+        `<a href="#" data-view="${key}">${view.label}</a>`
+    ).join('')}
+                    </div>
+                </div>
             </div>
             <div id="budget-content"></div>
         </div>
     `;
 
-    document.querySelectorAll(".budget-tab").forEach(tab => {
-        tab.addEventListener("click", () => switchTab(tab.dataset.tab));
+    const burgerBtn = document.getElementById("budget-burger-btn");
+    const dropdown = document.getElementById("budget-burger-dropdown");
+
+    burgerBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle("hidden");
     });
 
-    await switchTab(currentTab);
+    document.querySelectorAll("#budget-burger-dropdown a").forEach(link => {
+        link.addEventListener("click", async (e) => {
+            e.preventDefault();
+            dropdown.classList.add("hidden");
+            await switchView(link.dataset.view);
+        });
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!dropdown.contains(e.target) && e.target !== burgerBtn) {
+            dropdown.classList.add("hidden");
+        }
+    });
+
+    await switchView(currentView);
 }
 
 
-async function switchTab(tabName) {
-    currentTab = tabName;
-
-    document.querySelectorAll(".budget-tab").forEach(tab => {
-        tab.classList.toggle("active", tab.dataset.tab === tabName);
-    });
+async function switchView(viewName) {
+    currentView = viewName;
 
     const content = document.getElementById("budget-content");
 
-    const viewModule = await import(`${API_URL}/addons/budget/js/${tabName}_view.js`);
+    const viewModule = await import(`${API_URL}/addons/budget/js/${viewName}_view.js`);
     await viewModule.render(content);
 }
